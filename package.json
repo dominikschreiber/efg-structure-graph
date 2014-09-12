@@ -1,0 +1,24 @@
+{
+  "name": "efg-structure",
+  "version": "1.0.0",
+  "description": "generate a graph view of the member xls sheet with cytoscape",
+  "main": "create.js",
+  "directories": {
+    "test": "test"
+  },
+  "bin": {
+    "efg-structure": "./create.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dominik Schreiber <dominik@dominikschreiber.com>",
+  "license": "MIT",
+  "dependencies": {
+    "concat-stream": "^1.4.6",
+    "csv": "^0.4.0",
+    "event-stream": "^3.1.7",
+    "underscore": "^1.7.0",
+    "underscore.string": "^2.3.3"
+  }
+}

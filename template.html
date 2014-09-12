@@ -1,0 +1,230 @@
+<!doctype html>
+
+<html>
+
+<head>
+<meta charset="utf-8">
+<style>
+body { 
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
+
+#cy {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+</style>
+</head>
+
+<body>
+<div id="cy"></div>
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/cytoscape/2.2.12/cytoscape.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/arbor/0.91.0/arbor.min.js"></script>
+<script src="http://www.myersdaily.org/joseph/javascript/md5.js"></script>
+<script>
+/**
+ * creates a cytoscape-conform node for
+ * a given name, adds gravatar url if email given
+ *
+ * membernode('Daniel Mertins')
+ * // => { data: { id: 'danielm', name: 'Daniel Mertins' }, classes: 'member' }
+ * membernode('Dominik Schreiber <domischreib@gmail.com>')
+ * // => { data: { id: 'dominiks', name: 'Dominik Schreiber' }, classes: 'member has-avatar', css: { 'background-image': 'url(...)' } }
+ */
+function membernode(name) {
+  var namecomponents = name.split(' ')
+    , firstname = namecomponents[0]
+    , lastname = namecomponents[1]
+    , result = {
+        data: {
+          id: (firstname + lastname.substring(0,1)).toLowerCase(),
+          name: firstname + '\n' + lastname
+        },
+        classes: 'member'
+      };
+  
+  if (namecomponents.length > 2) {
+    result.css = {
+      'background-image': 'url(https://secure.gravatar.com/avatar/' + md5(namecomponents[2].slice(1,-1)) + ')'
+    };
+    result.classes = [result.classes, 'has-avatar'].join(' ');
+  }
+  
+  return result;
+}
+
+/**
+ * creates a cytoscape-conform node for
+ * a given task
+ *
+ * tasknode('Jugend')
+ * // => { data: { id: '_jugend', name: 'Jugend' }, classes: 'task' }
+ */
+function tasknode(task) {
+  return simplenode(task, '_', 'task');
+}
+
+/**
+ * creates a cytoscape-conform node for
+ * a given department
+ *
+ * departmentnode('Gemeindeleitung')
+ * // => { data: { id: '$gemeindeleitung', name: 'Gemeindeleitung' }, classes: 'department' }
+ */
+function departmentnode(department) {
+  return simplenode(department, '$', 'department');
+}
+
+/**
+ * creates a cytoscape-conform node given
+ * a name, a prefix, and a class list
+ *
+ * simplenode('Leitung Lobpreisteams', '$', 'department')
+ * // => { data: { id: '$leitung_lobpreisteams', name: 'Leitung Lobpreisteams' }, classes: 'department' }
+ */
+function simplenode(name, prefix, classes) {
+  return {
+    data: {
+      id: prefix + (name.replace(' ', '_')).toLowerCase(),
+      name: name
+    },
+    classes: classes
+  };
+}
+
+/**
+ * creates a cytoscape-conform edge given
+ * a string of two known ids
+ *
+ * idedge('dominiks $leitung_lobpreisteams')
+ * // => { data: { source: 'dominiks', target: '$leitung_lobpreisteams' } }
+ */
+function idedge(ids) {
+  var idcomponents = ids.split(' ')
+    , result = {
+        data: {
+          source: idcomponents[0]
+        }
+      };
+  
+  if (ids.lastIndexOf('!') === ids.length - 1) {
+    result.data.target = idcomponents[1].slice(0, -1);
+    result.css = { width: '8px' };
+  } else {
+    result.data.target = idcomponents[1];
+  }
+  
+  return result;
+}
+    
+function graph() {
+$('#cy').cytoscape({
+  zoomingEnabled: false,
+  grabbable: false,
+  locked: true,
+  style: cytoscape.stylesheet()
+    .selector('node')
+      .css({
+        width: '50px',
+        height: '50px',
+        content: 'data(name)',
+        'text-valign': 'bottom',
+        color: 'black',
+        shape: 'ellipse',
+        'text-outline-width': 0,
+        'text-outline-color': '#99c',
+        'background-color': '#99c',
+      })
+    .selector('.member.has-avatar')
+      .css({
+        'border-width': 1,
+        'border-color': '#999',
+        'background-fit': 'cover',
+        'background-repeat': 'no-repeat',
+        'background-position': 'center'
+      })
+    .selector('node.department')
+      .css({
+        'text-valign': 'center',
+        'background-color': '#9c9',
+        'text-outline-color': '#9c9',
+        shape: 'rectangle',
+        width: '150px',
+        height: '30px',
+      })
+    .selector('node.task')
+      .css({
+        'text-valign': 'center',
+        width: '1px',
+        height: '1px',
+        shape: 'ellipsis',
+        'background-color': '#fff',
+        'text-outline-color': '#fff'
+      })
+    .selector('edge')
+      .css({
+        width: '2px'
+      })
+    .selector('edge.leading')
+      .css({
+        width: '10px',
+        'line-color': '#99c'
+      })
+    .selector('edge.potential')
+      .css({
+        'line-style': 'dotted'
+      })
+    .selector(':selected')
+      .css({
+        'background-color': 'black',
+        'line-color': 'black',
+        'target-arrow-color': 'black',
+        'source-arrow-color': 'black'
+      })
+    .selector('.faded')
+      .css({
+        'opacity': 0.25,
+        'text-opacity': 0
+      }),
+  
+  elements: JSON.parse('<%= result %>'),
+  
+  layout: {
+    name: 'arbor',
+    maxSimulationTime: 30 * 1000 // default is 4s, we use 30s
+  },
+  
+  ready: function(){
+    window.cy = this;
+    
+    // giddy up...
+    
+    cy.elements().unselectify();
+    
+    cy.on('tap', 'node', function(e){
+      var node = e.cyTarget; 
+      var neighborhood = node.neighborhood().add(node);
+      
+      cy.elements().addClass('faded');
+      neighborhood.removeClass('faded');
+    });
+    
+    cy.on('tap', function(e){
+      if( e.cyTarget === cy ){
+        cy.elements().removeClass('faded');
+      }
+    });
+  }
+});
+
+}
+    
+$(document).ready(graph);
+</script>
+</body>
+
+</html>
