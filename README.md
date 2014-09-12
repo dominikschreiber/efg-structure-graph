@@ -14,3 +14,24 @@ cd efg-structure-graph
 ./create.js <your-list-export>.csv # prints to stdout
 ./create.js <your-list-export>.csv > out.html # saves this as out.html
 ```
+
+expected csv file format
+------------------------
+
+```csv
+;;;;Department1;Department2;DepartmentN;
+LineNumber;Lastname;Firstname;Birthdate;x;L;P;
+````
+
+- *First Line:* department names in columns 5+
+- *Other Lines:*
+  - *Column 1:* line number, not used
+  - *Column 2:* last name of member
+  - *Column 3:* first name of member
+  - *Column 4:* birthdate of member, not used
+  - *Column 5:* membership status for the specific department
+    - *:* no member
+    - *x:* regular member
+    - *L* or *1:* leading member
+    - *P:* potential member
+    
