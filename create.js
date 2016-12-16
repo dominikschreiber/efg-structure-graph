@@ -5,8 +5,9 @@ function createNode(nodeId) {
     data: {
       id: nodeId,
       name: names[nodeId]
-    }
-  }
+    },
+    classes: tasks.indexOf(nodeId) > -1 ? 'department' : ''
+  };
 }
 
 function createEdge(ids) {
@@ -16,25 +17,26 @@ function createEdge(ids) {
           source: idcomponents[0]
         }
       };
-  
+
   if (_(ids).endsWith('!')) {
     result.data.target = idcomponents[1].slice(0,-1);
-    result.classes = [result.classes, 'leading'].join(' ');
+    result.classes = [result.classes, 'leading'].filter(Boolean).join(' ');
   } else if (_(ids).endsWith('?')) {
     result.data.target = idcomponents[1].slice(0,-1);
-    result.classes = [result.classes, 'potential'].join(' ');
+    result.classes = [result.classes, 'potential'].filter(Boolean).join(' ');
   } else {
     result.data.target = idcomponents[1];
   }
-  
+
   return result;
 }
 
 function createAndSaveTaskId(taskname) {
   var id = '_' + _.slugify(taskname);
-  
+
+  tasks.push(id);
   names[id] = taskname;
-  
+
   return id;
 }
 
@@ -62,10 +64,11 @@ var csv = require('csv')
   , _ = require('underscore')
   , input = process.argv.slice(-1)[0]
   , graph = {}
+  , tasks = []
   , names = {}
 
   , firstTaskColumn = 4;
-  
+
 _.str = require('underscore.string');
 _.mixin(_.str.exports());
 _.str.include('Underscore.string', 'string');
@@ -78,16 +81,16 @@ fs.createReadStream(input)
       , members = graph.slice(1)
       , membersToTasks = {}
       , result = {};
-  
+
     _.each(members, function(member) {
       var memberId = createMemberId(member.slice(0,firstTaskColumn));
-      
+
       names[memberId] = member[2] + ' ' + member[1];
       membersToTasks[memberId] = [];
-      
+
       _.each(member.slice(firstTaskColumn), function(task, i) {
         var tasktype;
-        
+
         if (task !== '') {
           tasktype = task.toLowerCase();
           if (isNormalTask(tasktype)) { membersToTasks[memberId].push(tasks[i]); }
@@ -96,7 +99,7 @@ fs.createReadStream(input)
         }
       });
     });
-  
+
     result.nodes = _.map(tasks.concat(Object.keys(membersToTasks)), createNode);
     result.edges = _.chain(_.pairs(membersToTasks))
       .map(function(memberToTasks) {
@@ -107,7 +110,7 @@ fs.createReadStream(input)
       .flatten()
       .map(createEdge)
       .value();
-    
+
     fs.createReadStream('./template.html')
       .pipe(es.replace('<%= result %>', JSON.stringify(result)))
       .pipe(process.stdout);
