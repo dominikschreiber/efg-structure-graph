@@ -5,7 +5,7 @@
 <head>
 <meta charset="utf-8">
 <style>
-body { 
+body {
   font: 14px helvetica neue, helvetica, arial, sans-serif;
 }
 
@@ -46,14 +46,14 @@ function membernode(name) {
         },
         classes: 'member'
       };
-  
+
   if (namecomponents.length > 2) {
     result.css = {
       'background-image': 'url(https://secure.gravatar.com/avatar/' + md5(namecomponents[2].slice(1,-1)) + ')'
     };
     result.classes = [result.classes, 'has-avatar'].join(' ');
   }
-  
+
   return result;
 }
 
@@ -110,17 +110,17 @@ function idedge(ids) {
           source: idcomponents[0]
         }
       };
-  
+
   if (ids.lastIndexOf('!') === ids.length - 1) {
     result.data.target = idcomponents[1].slice(0, -1);
     result.css = { width: '8px' };
   } else {
     result.data.target = idcomponents[1];
   }
-  
+
   return result;
 }
-    
+
 function graph() {
 $('#cy').cytoscape({
   zoomingEnabled: false,
@@ -167,11 +167,11 @@ $('#cy').cytoscape({
       })
     .selector('edge')
       .css({
-        width: '2px'
+        width: '3px'
       })
     .selector('edge.leading')
       .css({
-        width: '10px',
+        width: '6px',
         'line-color': '#99c'
       })
     .selector('edge.potential')
@@ -190,29 +190,35 @@ $('#cy').cytoscape({
         'opacity': 0.25,
         'text-opacity': 0
       }),
-  
+
   elements: JSON.parse('<%= result %>'),
-  
+
   layout: {
     name: 'arbor',
-    maxSimulationTime: 30 * 1000 // default is 4s, we use 30s
+    maxSimulationTime: 60 * 1000 // default is 4s, we use 30s
   },
-  
+
   ready: function(){
     window.cy = this;
-    
+
     // giddy up...
-    
+
     cy.elements().unselectify();
-    
+
     cy.on('tap', 'node', function(e){
-      var node = e.cyTarget; 
+      var node = e.cyTarget;
       var neighborhood = node.neighborhood().add(node);
-      
+
       cy.elements().addClass('faded');
       neighborhood.removeClass('faded');
     });
-    
+
+    cy.on('tap', 'edge.leading', function(e) {
+      cy.elements().addClass('faded');
+      cy.edges('.leading').removeClass('faded');
+      cy.edges('.leading').connectedNodes().removeClass('faded');
+    });
+
     cy.on('tap', function(e){
       if( e.cyTarget === cy ){
         cy.elements().removeClass('faded');
@@ -222,7 +228,7 @@ $('#cy').cytoscape({
 });
 
 }
-    
+
 $(document).ready(graph);
 </script>
 </body>

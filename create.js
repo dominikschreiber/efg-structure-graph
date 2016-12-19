@@ -49,7 +49,7 @@ function isNormalTask(tasktype) {
 }
 
 function isLeadingTask(tasktype) {
-  return ['l', '1'].indexOf(tasktype) > -1;
+  return ['l', '1', 'l?'].indexOf(tasktype) > -1;
 }
 
 function isPotentialTask(tasktype) {
